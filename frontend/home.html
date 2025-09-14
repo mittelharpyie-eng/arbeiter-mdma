@@ -5,109 +5,31 @@
   <title>Übersicht - Arbeiter MDMA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      background-color: #121212;
-      color: #ffffff;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-    }
-    header {
-      background: #1f1f1f;
-      width: 100%;
-      padding: 1rem;
-      text-align: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-    .container {
-      margin-top: 2rem;
-      width: 100%;
-      max-width: 600px;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    a {
-      display: block;
-      background: #333;
-      padding: 1rem;
-      text-align: center;
-      text-decoration: none;
-      color: #fff;
-      border-radius: 8px;
-      transition: background 0.2s;
-    }
-    a:hover {
-      background: #555;
-    }
-    .logout {
-      margin-top: 2rem;
-      background: #800000;
-    }
+    body{background:#121212;color:#fff;font-family:Arial,Helvetica,sans-serif;margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+    header{width:100%;background:#1f1f1f;padding:1rem;text-align:center;font-weight:bold}
+    .wrap{max-width:600px;width:100%;padding:2rem;display:grid;gap:12px}
+    a.btn{display:block;background:#2a2a2a;padding:1rem;border-radius:10px;text-decoration:none;color:#fff;text-align:center}
+    a.btn:hover{background:#444}
+    .logout{background:#7a1f1f}
   </style>
 </head>
 <body>
-  <header>Arbeiter MDMA - Übersicht</header>
-  <div class="container" id="linksContainer">
-    <!-- Links werden hier per JavaScript eingefügt -->
-  </div>
+  <header>Arbeiter MDMA – Übersicht</header>
+  <div class="wrap" id="wrap">Lade…</div>
   <script>
-    async function loadUser() {
-      try {
-        const res = await fetch('/api/me');
-        if (!res.ok) {
-          window.location.href = '/login.html';
-          return;
-        }
-        const data = await res.json();
-        const role = data.user.role;
-        const container = document.getElementById('linksContainer');
-
-        if (role === 'master') {
-          container.innerHTML = `
-            <a href="dashboard.html">📋 Dashboard (Akten Übersicht)</a>
-            <a href="accounts.html">👥 Accounts Verwaltung</a>
-            <a href="search.html">🔎 Suche</a>
-            <a href="entry.html">✍️ Neue Akte eintragen</a>
-            <a class="logout" href="#" onclick="logout()">🚪 Logout</a>
-          `;
-        }
-        else if (role === 'entry') {
-          container.innerHTML = `
-            <a href="entry.html">✍️ Neue Akte eintragen</a>
-            <a class="logout" href="#" onclick="logout()">🚪 Logout</a>
-          `;
-        }
-        else if (role === 'search') {
-          container.innerHTML = `
-            <a href="search.html">🔎 Suche</a>
-            <a class="logout" href="#" onclick="logout()">🚪 Logout</a>
-          `;
-        }
-        else if (role === 'worker') {
-          container.innerHTML = `
-            <a href="dashboard.html">📋 Dashboard (Akten Übersicht)</a>
-            <a class="logout" href="#" onclick="logout()">🚪 Logout</a>
-          `;
-        }
-      } catch (err) {
-        console.error('Fehler:', err);
-        window.location.href = '/login.html';
+    async function me(){
+      const r = await fetch('/api/me'); const {user} = await r.json();
+      const W = document.getElementById('wrap');
+      if(!user){ location.href='login.html'; return; }
+      let html = '';
+      if(user.role==='admin'){
+        html += '<a class="btn" href="admin.html">👑 Benutzerverwaltung</a>';
       }
+      html += '<a class="btn" href="#" onclick="logout()">🚪 Logout</a>';
+      W.innerHTML = html;
     }
-
-    async function logout() {
-      await fetch('/api/logout', { method: 'POST' });
-      window.location.href = '/login.html';
-    }
-
-    loadUser();
+    async function logout(){ await fetch('/api/logout',{method:'POST'}); location.href='login.html'; }
+    me();
   </script>
 </body>
 </html>
