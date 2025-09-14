@@ -26,7 +26,8 @@ function ensureMaster() {
             role TEXT DEFAULT 'user'
         );`);
         db.prepare(`INSERT INTO users (username, password, role) VALUES (?, ?, ?);`).run("admin", "admin123", "admin");
-        console.log("✅ Master-User "admin" wurde erstellt. Passwort: admin123");
+        console.log(`✅ Master-User "admin" wurde erstellt. Passwort: admin123`);
+
     }
 }
 
