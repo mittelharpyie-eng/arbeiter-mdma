@@ -34,3 +34,36 @@ app.get('/', (req, res) => {
 app.listen(10000, () => {
   console.log('🚀 Server läuft auf http://localhost:10000');
 });
+
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+
+
+const PORT = process.env.PORT || 10000;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+// Weiterleitung von "/" auf login.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend', 'login.html'));
+});
+
+// Dummy Login-Route
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username === 'admin' && password === 'admin123') {
+    return res.json({ success: true, role: 'admin' });
+  }
+  res.status(401).json({ success: false, message: 'Ungültige Anmeldedaten' });
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server läuft auf http://localhost:${PORT}`);
+});
