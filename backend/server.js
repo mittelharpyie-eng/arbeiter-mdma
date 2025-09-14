@@ -1,2 +1,5 @@
 import express from "express";
-console.log("Server läuft");
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server läuft auf http://localhost:${PORT}`);
+});
