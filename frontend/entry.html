@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arbeiter MDMA – Akten Eintragen</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white min-h-screen">
+<header class="p-4 bg-neutral-900 flex items-center justify-between">
+  <h1 class="font-bold text-xl">Neue Akte eintragen – Entry Nutzer</h1>
+  <button id="logout" class="px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700">Logout</button>
+</header>
+<main class="p-6">
+  <form id="entryForm" class="flex flex-col gap-2">
+    <input id="name" placeholder="Name" class="p-2 rounded-xl bg-neutral-800 outline-none text-white" required>
+    <input id="vorname" placeholder="Vorname" class="p-2 rounded-xl bg-neutral-800 outline-none text-white" required>
+    <input id="geburtstag" placeholder="Geburtstag" class="p-2 rounded-xl bg-neutral-800 outline-none text-white" required>
+    <input id="zugehoerigkeit" placeholder="Zugehörigkeit" class="p-2 rounded-xl bg-neutral-800 outline-none text-white">
+    <input id="arbeiterVon" placeholder="Arbeiter von" class="p-2 rounded-xl bg-neutral-800 outline-none text-white">
+    <input id="passwort" placeholder="Akte Passwort" type="password" class="p-2 rounded-xl bg-neutral-800 outline-none text-white">
+    <textarea id="notizen" placeholder="Notizen" class="p-2 rounded-xl bg-neutral-800 outline-none text-white"></textarea>
+    <input id="bild" type="file" accept="image/png" class="p-2 rounded-xl bg-neutral-800 outline-none text-white">
+    <button type="submit" class="px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700">Akte speichern</button>
+  </form>
+  <div id="status" class="mt-4"></div>
+</main>
+<script>
+document.getElementById('entryForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const fileInput = document.getElementById('bild');
+  let bildData='';
+  if(fileInput.files.length>0){
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = async () => {
+      bildData = reader.result;
+      await sendData(bildData);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    await sendData(bildData);
+  }
+});
+
+async function sendData(bildData){
+  const payload = {
+    name: document.getElementById('name').value,
+    vorname: document.getElementById('vorname').value,
+    geburtstag: document.getElementById('geburtstag').value,
+    zugehoerigkeit: document.getElementById('zugehoerigkeit').value,
+    arbeiterVon: document.getElementById('arbeiterVon').value,
+    passwort: document.getElementById('passwort').value,
+    notizen: document.getElementById('notizen').value,
+    bild: bildData
+  };
+  const res = await fetch('/api/akten',{method:'POST',credentials:'include',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  if(res.ok){
+    document.getElementById('status').textContent='Akte erfolgreich gespeichert!';
+    document.getElementById('entryForm').reset();
+  } else document.getElementById('status').textContent='Fehler beim Speichern';
+}
+
+document.getElementById('logout').addEventListener('click',async()=>{
+  await fetch('/api/logout',{method:'POST',credentials:'include'});
+  window.location.href='/';
+});
+</script>
+</body>
+</html>

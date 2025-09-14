@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arbeiter MDMA – Accounts</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white min-h-screen">
+<header class="p-4 bg-neutral-900 flex items-center justify-between">
+  <h1 class="font-bold text-xl">Accounts Verwaltung – Master</h1>
+  <button id="logout" class="px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700">Logout</button>
+</header>
+<main class="p-6">
+  <form id="addAccountForm" class="mb-4 flex flex-col gap-2">
+    <input id="username" placeholder="Username" class="p-2 rounded-xl bg-neutral-800 outline-none text-white">
+    <input id="password" type="password" placeholder="Passwort" class="p-2 rounded-xl bg-neutral-800 outline-none text-white">
+    <select id="role" class="p-2 rounded-xl bg-neutral-800 outline-none text-white">
+      <option value="">Rolle wählen</option>
+      <option value="master">Master</option>
+      <option value="search">Search</option>
+      <option value="entry">Entry</option>
+    </select>
+    <button type="submit" class="px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700">Account erstellen</button>
+  </form>
+  <div class="overflow-x-auto">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="border-b border-neutral-700">
+          <th class="p-2">ID</th>
+          <th class="p-2">Username</th>
+          <th class="p-2">Rolle</th>
+          <th class="p-2">Erstellt</th>
+          <th class="p-2">Aktionen</th>
+        </tr>
+      </thead>
+      <tbody id="accountsBody"></tbody>
+    </table>
+  </div>
+</main>
+<script>
+async function ladeAccounts(){
+  const res = await fetch('/api/accounts',{credentials:'include'});
+  if(!res.ok){ alert('Zugriff verweigert'); return; }
+  const data = await res.json();
+  const tbody = document.getElementById('accountsBody');
+  tbody.innerHTML='';
+  data.accounts.forEach(a=>{
+    const tr = document.createElement('tr');
+    tr.className='border-b border-neutral-700 hover:bg-neutral-800';
+    tr.innerHTML=`
+      <td class="p-2">${a.id}</td>
+      <td class="p-2">${a.username}</td>
+      <td class="p-2">${a.role}</td>
+      <td class="p-2">${a.createdAt}</td>
+      <td class="p-2"><button onclick="loeschen(${a.id})" class="px-2 py-1 bg-red-700 rounded-xl hover:bg-red-600">Löschen</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function loeschen(id){
+  if(!confirm('Wirklich löschen?')) return;
+  await fetch(`/api/accounts/${id}`,{method:'DELETE',credentials:'include'});
+  ladeAccounts();
+}
+
+document.getElementById('addAccountForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  const role = document.getElementById('role').value;
+  const res = await fetch('/api/accounts',{method:'POST',credentials:'include',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username,password,role})});
+  if(!res.ok){ alert('Fehler beim Erstellen'); return; }
+  ladeAccounts();
+  e.target.reset();
+});
+
+document.getElementById('logout').addEventListener('click',async()=>{
+  await fetch('/api/logout',{method:'POST',credentials:'include'});
+  window.location.href='/';
+});
+
+ladeAccounts();
+</script>
+</body>
+</html>
