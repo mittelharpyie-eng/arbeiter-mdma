@@ -1,141 +1,44 @@
-
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
-import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
-import multer from 'multer';
+import cors from 'cors';
 import { fileURLToPath } from 'url';
-
-// Sicherstellen, dass /data existiert
-const dataDir = './data';
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir);
-}
-
-// users.json initialisieren, wenn nicht vorhanden
-const usersPath = './data/users.json';
-if (!fs.existsSync(usersPath)) {
-    fs.writeFileSync(usersPath, JSON.stringify([
-        { username: 'admin', password: 'admin123', role: 'admin' }
-    ], null, 2));
-}
-
-// records.json ebenfalls initialisieren
-const recordsPath = './data/records.json';
-if (!fs.existsSync(recordsPath)) {
-    fs.writeFileSync(recordsPath, JSON.stringify([], null, 2));
-}
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 10000;
-const SECRET = 'supersecret';
-
 
 app.use(express.json());
-app.use(cors());
 app.use(cookieParser());
+app.use(cors());
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// Multer für PNG Uploads
-const upload = multer({ dest: path.join(__dirname, '../uploads') });
-
-// Initialdaten sicherstellen
-if (!fs.existsSync(usersPath)) fs.writeFileSync(usersPath, '[]');
-if (!fs.existsSync(recordsPath)) fs.writeFileSync(recordsPath, '[]');
-
-// Master-User erzeugen (admin/admin123)
-const users = JSON.parse(fs.readFileSync(usersPath));
-if (!users.find(u => u.username === 'admin')) {
-  users.push({ username: 'admin', password: 'admin123', role: 'admin' });
-  fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
-  console.log('✅ Master-User "admin" wurde erstellt. Passwort: admin123');
+const USERS_FILE = path.join(__dirname, '../data/users.json');
+if (!fs.existsSync(USERS_FILE)) {
+    fs.mkdirSync(path.join(__dirname, '../data'), { recursive: true });
+    fs.writeFileSync(USERS_FILE, JSON.stringify([{
+        username: 'admin',
+        password: 'admin123',
+        role: 'admin'
+    }], null, 2));
 }
 
-// Login
 app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-  const users = JSON.parse(fs.readFileSync('./data/users.json', 'utf-8'));
-
-  const user = users.find(u => u.username === username && u.password === password);
-  if (!user) {
-    return res.status(401).send('Ungültige Zugangsdaten');
-  }
-
-  // Cookie setzen (z. B. mit Rolle)
-  res.cookie('user', JSON.stringify({ username: user.username, role: user.role }), {
-    httpOnly: true,
-    maxAge: 86400000
-  });
-
-  // Weiterleitung je nach Rolle
-  if (user.role === 'admin') return res.redirect('/frontend/dashboard.html');
-  if (user.role === 'entry') return res.redirect('/frontend/entry.html');
-  if (user.role === 'search') return res.redirect('/frontend/search.html');
-
-  res.redirect('/frontend/login.html');
+    const { username, password } = req.body;
+    const users = JSON.parse(fs.readFileSync(USERS_FILE));
+    const user = users.find(u => u.username === username && u.password === password);
+    if (user) {
+        const token = jwt.sign({ username: user.username, role: user.role }, 'secret', { expiresIn: '1h' });
+        res.cookie('token', token, { httpOnly: true }).json({ success: true });
+    } else {
+        res.status(401).json({ error: 'Invalid credentials' });
+    }
 });
 
+app.get('/', (req, res) => res.redirect('/login.html'));
 
-// Auth Middleware
-function authenticate(req, res, next) {
-  const token = req.cookies.token;
-  if (!token) return res.status(401).json({ message: 'Unauthorized' });
-  try {
-    req.user = jwt.verify(token, SECRET);
-    next();
-  } catch (e) {
-    res.status(401).json({ message: 'Invalid token' });
-  }
-}
-
-// Benutzerliste (Admin)
-app.get('/api/users', authenticate, (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
-  const users = JSON.parse(fs.readFileSync(usersPath));
-  res.json(users);
-});
-
-// Neue Benutzer anlegen (Admin)
-app.post('/api/users', authenticate, (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
-  const users = JSON.parse(fs.readFileSync(usersPath));
-  users.push(req.body);
-  fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
-  res.json({ message: 'User created' });
-});
-
-// Akten speichern (Entry-Rolle)
-app.post('/api/records', authenticate, (req, res) => {
-  if (req.user.role !== 'entry') return res.status(403).json({ message: 'Forbidden' });
-  const records = JSON.parse(fs.readFileSync(recordsPath));
-  records.push(req.body);
-  fs.writeFileSync(recordsPath, JSON.stringify(records, null, 2));
-  res.json({ message: 'Record saved' });
-});
-
-// Akten suchen (Search-Rolle)
-app.get('/api/records', authenticate, (req, res) => {
-  if (req.user.role !== 'search') return res.status(403).json({ message: 'Forbidden' });
-  const records = JSON.parse(fs.readFileSync(recordsPath));
-  res.json(records);
-});
-
-// PNG Upload
-app.post('/api/upload', authenticate, upload.single('image'), (req, res) => {
-  res.json({ filename: req.file.filename });
-});
-
-// Weiterleitung Root → Login
-app.get('/', (req, res) => {
-  res.redirect('/login.html');
-});
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server läuft auf http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Server läuft auf http://localhost:${PORT}`));

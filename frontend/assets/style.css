@@ -1,0 +1,8 @@
+
+body.dark {
+    background-color: #121212;
+    color: white;
+    font-family: sans-serif;
+}
+a { color: #0af; display: block; margin: 5px 0; }
+input, button { display: block; margin: 10px 0; padding: 8px; }
