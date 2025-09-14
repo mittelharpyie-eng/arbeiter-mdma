@@ -60,12 +60,27 @@ if (!users.find(u => u.username === 'admin')) {
 // Login
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-  const users = JSON.parse(fs.readFileSync(usersPath));
+  const users = JSON.parse(fs.readFileSync('./data/users.json', 'utf-8'));
+
   const user = users.find(u => u.username === username && u.password === password);
-  if (!user) return res.status(401).json({ message: 'Invalid credentials' });
-  const token = jwt.sign({ username: user.username, role: user.role }, SECRET, { expiresIn: '1h' });
-  res.cookie('token', token, { httpOnly: true }).json({ message: 'Logged in' });
+  if (!user) {
+    return res.status(401).send('Ungültige Zugangsdaten');
+  }
+
+  // Cookie setzen (z. B. mit Rolle)
+  res.cookie('user', JSON.stringify({ username: user.username, role: user.role }), {
+    httpOnly: true,
+    maxAge: 86400000
+  });
+
+  // Weiterleitung je nach Rolle
+  if (user.role === 'admin') return res.redirect('/frontend/dashboard.html');
+  if (user.role === 'entry') return res.redirect('/frontend/entry.html');
+  if (user.role === 'search') return res.redirect('/frontend/search.html');
+
+  res.redirect('/frontend/login.html');
 });
+
 
 // Auth Middleware
 function authenticate(req, res, next) {
