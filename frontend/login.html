@@ -1,39 +1,32 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Login</title>
 </head>
 <body>
   <h1>Login</h1>
-  <form action="/api/login" method="POST" onsubmit="submitForm(event)">
-    <input type="text" name="username" placeholder="Benutzername" required />
-    <input type="password" name="password" placeholder="Passwort" required />
-    <button type="submit">Anmelden</button>
+  <form id="loginForm">
+    <input type="text" id="username" placeholder="Benutzername" required><br>
+    <input type="password" id="password" placeholder="Passwort" required><br>
+    <button type="submit">Einloggen</button>
   </form>
-
+  <p id="message"></p>
   <script>
-    async function submitForm(event) {
+    document.getElementById("loginForm").addEventListener("submit", async function(event) {
       event.preventDefault();
-      const form = event.target;
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: form.username.value,
-          password: form.password.value
-        })
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
       });
 
-      const data = await res.json();
-      if (data.success) {
-        alert('Login erfolgreich! Rolle: ' + data.role);
-        // Weiterleitung bei Erfolg (kann angepasst werden)
-        // window.location.href = "/dashboard.html";
-      } else {
-        alert('Fehler: ' + data.message);
-      }
-    }
+      const result = await response.json();
+      document.getElementById("message").textContent = result.success ? "Erfolgreich eingeloggt!" : result.message;
+    });
   </script>
 </body>
 </html>
