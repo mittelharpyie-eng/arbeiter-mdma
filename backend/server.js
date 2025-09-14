@@ -8,6 +8,27 @@ import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 
+// Sicherstellen, dass /data existiert
+const dataDir = './data';
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir);
+}
+
+// users.json initialisieren, wenn nicht vorhanden
+const usersPath = './data/users.json';
+if (!fs.existsSync(usersPath)) {
+    fs.writeFileSync(usersPath, JSON.stringify([
+        { username: 'admin', password: 'admin123', role: 'admin' }
+    ], null, 2));
+}
+
+// records.json ebenfalls initialisieren
+const recordsPath = './data/records.json';
+if (!fs.existsSync(recordsPath)) {
+    fs.writeFileSync(recordsPath, JSON.stringify([], null, 2));
+}
+
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -15,8 +36,6 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 const SECRET = 'supersecret';
 
-const usersPath = path.join(__dirname, '../data/users.json');
-const recordsPath = path.join(__dirname, '../data/records.json');
 
 app.use(express.json());
 app.use(cors());
