@@ -1,7 +1,7 @@
 import express from 'express';
 import session from 'express-session';
 import rateLimit from 'express-rate-limit';
-import bcrypt from 'bcrypt';
+import bcrypt from "bcryptjs";
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 import dotenv from 'dotenv';
